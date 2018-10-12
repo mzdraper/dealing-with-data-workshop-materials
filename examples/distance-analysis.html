@@ -160,7 +160,7 @@ map.on('mousemove', function(e) {
   var feature = features[0];
 
   popup.setLngLat(feature.geometry.coordinates)
-    .setHTML(<b>feature.properties.Name<b>)
+    .setHTML(feature.properties.Name)
     .addTo(map);
 
   map.getCanvas().style.cursor = features.length ? 'pointer' : '';
