@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <!-- External libraries -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      #panel {
+        position: absolute;
+        height: 100%;
+        width: 245px;
+        background-color: #ffffff;
+        color: black;
+        opacity: 0.8;
+        padding: 10px 10px;
+        font-family: 'Courier';
+        font-size: 16px;
+        }
+
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+    </style>
+</head>
+
+<body>
+<div id='map'></div>
+<div id='panel'>
+  <h1>ER Room Map</h1>
+  <p>There's a lot of hospitals in San Francisco, but which is the closest? Click on the town hall icon where your neighborhood is to find out which emergency room is the closest to you by distance. (Disclaimer: Traffic is not considered in this analysis.)</p>
+  <p>Here's a short checklist of items to bring to with you.</p>
+  <p>Checklist:<br>
+    <input type="checkbox">Photo ID<br>
+    <input type="checkbox">Insurance Card<br>
+    <input type="checkbox">Glasses/Contacts<br>
+    <input type="checkbox">Medication List<br>
+    <input type="checkbox">Allergies List<br>
+    <input type="checkbox">Legal Documents<br>
+    <input type="checkbox">Comfort Item<br>
+  <b><p>In a medical emergency, call 911.</p>
+  <p>For spinal or head injuries, wait for an ambulance.</p></b>
+</div>
+
+<script>
+mapboxgl.accessToken = ''; // insert your access token
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: '', // insert your style URL
+  center: [-122.462520, 37.760806], // [long, lat]
+  zoom: 11.8
+});
+
+var hospitals = {
+  type: 'FeatureCollection',
+  features: [
+    { type: 'Feature', properties: { Name: 'San Francisco Veterans Affairs Medical Center Emergency Department', Address: '4150 Clement St. San Francisco, CA 94' }, geometry: { type: 'Point', coordinates: [-122.504781, 37.782300] } },
+    { type: 'Feature', properties: { Name: 'California Pacific Medical Center California Campus Emergency Room', Address: '3700 California St. San Francisco, CA 94118' }, geometry: { type: 'Point', coordinates: [-122.456435, 37.786573] } },
+    { type: 'Feature', properties: { Name: 'St. Marys Medical Center - Emergency Room', Address: '450 Stanyan St. San Francisco, CA 94117' }, geometry: { type: 'Point', coordinates: [-122.453781, 37.774062] } },
+    { type: 'Feature', properties: { Name: 'Kaiser Permanente Emergency Room', Address: '2425 Geary Blvd. San Francisco, CA 94115' }, geometry: { type: 'Point', coordinates: [-122.442762, 37.782215] } },
+    { type: 'Feature', properties: { Name: 'UCSF Emergency Department', Address: '505 Parnassus Ave. San Francisco, CA 94143' }, geometry: { type: 'Point', coordinates: [-122.457337, 37.763241] } },
+    { type: 'Feature', properties: { Name: 'Sutter Health CPMC Davies Campus Emergency Room', Address: '45 Castro St. San Francisco, CA 94114' }, geometry: { type: 'Point', coordinates: [-122.434710, 37.768560] } },
+    { type: 'Feature', properties: { Name: 'Saint Francis Memorial Hospital Emergency Room', Address: '1150 Bush St. San Francisco, CA 94109' }, geometry: { type: 'Point', coordinates: [-122.416224, 37.789485] } },
+    { type: 'Feature', properties: { Name: 'Chinese Hospital: Emergency Room', Address: '845 Jackson St. San Francisco, CA 94133' }, geometry: { type: 'Point', coordinates: [-122.408943, 37.795498] } },
+    { type: 'Feature', properties: { Name: 'UCSF Childrens Emergency Department', Address: '1975 Fourth St. San Francisco, CA 94158' }, geometry: { type: 'Point', coordinates: [-122.390374, 37.764643] } },
+    { type: 'Feature', properties: { Name: 'CPMC Emergency Department', Address: '3555 Ceaser Chavez St. San Francisco, CA 94110' }, geometry: { type: 'Point', coordinates: [-122.390374, 37.764643] } },
+    { type: 'Feature', properties: { Name: 'Zuckerberg San Francisco General Hospital and Trauma Center Emergency Room', Address: '1001 Potrero Ave. San Francisco, CA 94110' }, geometry: { type: 'Point', coordinates: [-122.405355, 37.755669] } }
+  ]
+};
+var neighborhoods = {
+  type: 'FeatureCollection',
+  features: [
+    { type: 'Feature', properties: { Name: 'Outer Richmond'}, geometry: { type: 'Point', coordinates: [-122.495153, 37.777804] } },
+    { type: 'Feature', properties: { Name: 'Inner Richmond'}, geometry: { type: 'Point', coordinates: [-122.465157, 37.779370] } },
+    { type: 'Feature', properties: { Name: 'Outer Sunset' }, geometry: { type: 'Point', coordinates: [-122.486075, 37.761575] } },
+    { type: 'Feature', properties: { Name: 'Inner Sunset' }, geometry: { type: 'Point', coordinates: [-122.468409, 37.760867] } },
+    { type: 'Feature', properties: { Name: 'Presidio' }, geometry: { type: 'Point', coordinates: [-122.466813, 37.798679] } },
+    { type: 'Feature', properties: { Name: 'Russian Hill' }, geometry: { type: 'Point', coordinates: [-122.419734, 37.800988] } },
+    { type: 'Feature', properties: { Name: 'North Beach' }, geometry: { type: 'Point', coordinates: [-122.410839, 37.806046] } },
+    { type: 'Feature', properties: { Name: 'South Park' }, geometry: { type: 'Point', coordinates: [-122.394212, 37.781574] } },
+    { type: 'Feature', properties: { Name: 'SoMa' }, geometry: { type: 'Point', coordinates: [-122.405830, 37.778608] } },
+    { type: 'Feature', properties: { Name: 'Mission Bay' }, geometry: { type: 'Point', coordinates: [-122.393682, 37.772973] } },
+    { type: 'Feature', properties: { Name: 'Mission' }, geometry: { type: 'Point', coordinates: [-122.414822, 37.759989] } },
+    { type: 'Feature', properties: { Name: 'Bernal Heights' }, geometry: { type: 'Point', coordinates: [-122.418160, 37.741355] } },
+    { type: 'Feature', properties: { Name: 'Castro' }, geometry: { type: 'Point', coordinates: [-122.435033, 37.760942] } },
+    { type: 'Feature', properties: { Name: 'Balboa Park' }, geometry: { type: 'Point', coordinates: [-122.444039, 37.724530] } },
+    { type: 'Feature', properties: { Name: 'Glen Park' }, geometry: { type: 'Point', coordinates: [-122.432775, 37.737478] } },
+    { type: 'Feature', properties: { Name: 'Park Merced' }, geometry: { type: 'Point', coordinates: [-122.481172, 37.718667] } },
+    { type: 'Feature', properties: { Name: 'Fillmore/Western Addition' }, geometry: { type: 'Point', coordinates: [-122.433931, 37.782044] } }
+  ]
+};
+
+/* When the map loads, also load the following:
+ * 1. hospitals data
+ * 2. neighborhoods data
+ * 3. nearest-hospital as an empty object
+ */
+map.on('load', function() {
+  map.addLayer({
+    id: 'hospitals',
+    type: 'symbol',
+    source: {
+      type: 'geojson',
+      data: hospitals
+    },
+    layout: {
+      'icon-image': 'hospital-15'
+    },
+    paint: { }
+  });
+
+  map.addLayer({
+    id: 'neighborhoods',
+    type: 'symbol',
+    source: {
+      type: 'geojson',
+      data: neighborhoods
+    },
+    layout: {
+      'icon-image': 'town-hall-15'
+    },
+    paint: { }
+  });
+
+  map.addSource('nearest-hospital', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: []
+    }
+  });
+});
+
+/* As the mouse moves around the screen, it's checking to see if it's
+ * hovering over a feature to display a popup with information.
+ */
+var popup = new mapboxgl.Popup();
+
+map.on('mousemove', function(e) {
+
+  var features = map.queryRenderedFeatures(e.point, { layers: ['hospitals', 'neighborhoods'] });
+  if (!features.length) {
+    popup.remove();
+    return;
+  }
+
+  var feature = features[0];
+
+  popup.setLngLat(feature.geometry.coordinates)
+    .setHTML(<b>feature.properties.Name<b>)
+    .addTo(map);
+
+  map.getCanvas().style.cursor = features.length ? 'pointer' : '';
+
+});
+
+/* Listens for click events on neighborhoods features.
+ * Uses queryRenderedFeatures and turf.nearest() to
+ * calculate the nearest hospitals feature.
+ */
+map.on('click', function(e) {
+  var neighborhoodsFeatures = map.queryRenderedFeatures(e.point, { layers: ['neighborhoods'] });
+  if (!neighborhoodsFeatures.length) {
+    return;
+  }
+
+  var neighborhoodsFeature = neighborhoodsFeatures[0];
+
+  var nearestHospital = turf.nearest(neighborhoodsFeature, hospitals);
+
+  if (nearestHospital !== null) {
+
+    map.getSource('nearest-hospital').setData({
+      type: 'FeatureCollection',
+      features: [nearestHospital]
+    });
+
+    map.addLayer({
+      id: 'nearest-hospital',
+      type: 'circle',
+      source: 'nearest-hospital',
+      paint: {
+        'circle-radius': 20,
+        'circle-color': '#486DE0'
+      }
+    }, 'hospitals');
+  }
+});
+
+</script>
+</body>
+</html>
